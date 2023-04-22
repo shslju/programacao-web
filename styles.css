@@ -39,7 +39,7 @@ img{
     transform: translate(-50%,-45%);
 }
 #game-canvas{
-    border: 5px solid brown;
+    border: 5px brown;
     position:fixed;
     top: 50%;
     left: 50%;

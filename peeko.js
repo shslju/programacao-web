@@ -8,7 +8,7 @@ let character_sprite = new Image();
 character_sprite.src = 'img/gemu/0/0-1.webp';
 function animate(){
     ctx.clearRect(0, 0, CANVAS_WIDTH, CANVAS_HEIGHT);
-    ctx.drawImage(character_sprite, 0, 0);
+    ctx.drawImage(character_sprite, -150, -120,);
     requestAnimationFrame(animate);
 }
 animate();
