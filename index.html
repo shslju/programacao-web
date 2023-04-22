@@ -1,53 +1,30 @@
 <!DOCTYPE html>
 <html lang="en-us">
     <head>
-        <title>zerioum</title>
-        <link href="bootstrap.min.css" type="text/css" rel="stylesheet"/> 
+        <meta charset="UTF-8"/>
+        <title>ZERIOUM</title>
+        <link href="bootstrap.min.css" type="text/css" rel="stylesheet"/>
+        <link href="styles.css" type="text/css" rel="stylesheet"/>
         <meta name="keywords"
               content="games, learning, educational"/>
-        <style>
-            #logo img{
-                max-width: 100%;
-                max-height: 100%;
-                position:absolute;
-                top: 50%;
-                left: 50%;
-                transform: translate(-50%,-50%);
-                margin: auto;
-                display: block; /* remove extra space below image */
-            }
-            #body {
-                background-color: rgb(249,244,227);
-            }
-            #header{
-                background-color: rgb(242, 162, 42);
-                height: 8rem;
-            }
-            #logo{
-                background-color: rgb(91, 62, 44);
-                height: 6rem;
-                position:absolute;
-                top:1rem;
-                left:3%;
-                border: 5px solid rgb(43, 25, 28);
-            }
-            #game-body{
-                background-color: rgb(229, 119, 30);
-                height:500px;
-                position:fixed;
-                top: 50%;
-                left: 50%;
-                transform: translate(-50%,-45%);
-            }
-        </style>
     </head>
     <body id="body">
 
         <div id="header" class="container-fluid">
-            <div  id="logo" class="container col-xxl-2 col-xl-2 col-lg-2 col-md-3 col-sm-5">
-                <a href="#"><img src="img/logo-b.png" alt="logo"></a>
+            <div class="row">
+                <div  id="logo" class="col-2">
+                    <a href="#"><img src="img/logo-b.png"></a>
+                </div>
+                
+                <div id="blank-space-logo" class="col-9">
+                </div>
+                
+                <div id="settings-icon" class="col-1">
+                    <a href="#"><img src="img/list.svg" alt="settings icon"></a>
+                </div>
             </div>
         </div>
+            
         <div id="game-body" class="container col-xxl-4 col-xl-4 col-lg-4"><h1>ok ok</h1></div>
         <script href="bootstrap.bundle.min.js"></script>
     </body>
