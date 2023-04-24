@@ -1,0 +1,10 @@
+aaa aaa aaa aaaaaa aaaa
+aaa aaaa aaaa aaaa aaaa
+aaaaaa aaaaa aaa!!
+/
+aaaa aaaaaaa aaaaaaaa a
+aaaaa aaa.
+!
+#character-situation-dialogue
+/-indicates new textbox
+!-indicates end of dialogue.
