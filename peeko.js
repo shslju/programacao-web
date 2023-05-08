@@ -55,6 +55,7 @@ class TextBox {
         this.line_ptr = 0;
         this.txt_pointer = 0;
         this.timer=0;
+        this.confirmSprite = new SpeechConfirmSprite(335,80);
         this.list_char = new Array();
         this.end_enable = false;
     }
@@ -65,6 +66,7 @@ class TextBox {
                 this.add_character_to_draw();
             }
         }
+        this.confirmSprite.update();
 
     }
     add_character_to_list(char, x, y){
@@ -119,6 +121,7 @@ class TextBox {
             let item = this.list_char[i];
             this.draw_character(item[0], item[1], item[2]);
         }
+        this.confirmSprite.draw();
     }
     draw_character(char,x,y){
         ctx.fillText(char, x, y);
@@ -151,6 +154,14 @@ function startAnimating(maxFPS){
     startTime = then;
     animate();
 }
+
+
+canvas.addEventListener('click', function(evt){
+    let x = evt.x;
+    let y = evt.y;
+    
+})
+
 function animate(){
     ctx.font = "12px Courier";
     requestAnimationFrame(animate);
@@ -158,18 +169,15 @@ function animate(){
     now = Date.now();
     elapsed = now - then;
     if (elapsed > fpsInterval){
-        dialogue_confirm.update();
-        
         then = now - (elapsed % fpsInterval);
         ctx.clearRect(0, 0, CANVAS_WIDTH, CANVAS_HEIGHT);
         ctx.drawImage(speech_bubble_sprite, 210, 0, 150, 150);
         ctx.drawImage(character_sprite, 0, 0, 450, 450);
-        dialogue_confirm.draw();
         peeko_text.draw();
     }
     
     
 }
 let peeko_text = new TextBox(lines);
-let dialogue_confirm = new SpeechConfirmSprite(335,80);
+
 startAnimating(24);
