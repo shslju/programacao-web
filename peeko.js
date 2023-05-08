@@ -6,7 +6,7 @@ const CANVAS_HEIGHT = canvas.height = 480;
 const maxFPS = 15;
 var then, now, elapsed, fpsInterval;
 const textSpeed = 0.06;
-let lines = [["aaa aaa aaa aaaaaa a.","aaa aaaa aaaa aaaa aaa2","aaaaaa aaaaa aaa!!"],["aaaa aaaaaaa aaaaaaaa a","aaaaa aaa."]];
+let lines = [["i like moiry from overwatch","aaa aaaa aaaa aaaa aaa2","aaaaaa aaaaa aaa!!"],["aaaa aaaaaaa aaaaaaaa a","aaaaa aaa."]];
 
 let character_sprite = new Image();
 let speech_bubble_sprite = new Image();
@@ -14,6 +14,33 @@ speech_bubble_sprite.src = 'img/gemu/0/speech-bubble.png'
 character_sprite.src = 'img/gemu/0/0-1.webp';
 let blip = new Audio("./sfx/sfx-blipmale.wav");
 blip.volume = 0.1;
+
+
+class SpeechConfirmSprite {
+    constructor(x,y){
+        
+        this.sprite = new Image();
+        this.sprite.src = 'img/gemu/0/confirm.svg';
+        this.x = x;
+        this.y = y;
+        this.anim = 0;
+    }
+    update(){
+        if (this.anim < 5) {
+            this.y++;
+            this.anim++
+        } else if (this.anim < 10) {
+            this.y--;
+            this.anim++;
+        } else {
+            this.anim=0;
+        }
+        console.log("updating");
+    }
+    draw(){
+        ctx.drawImage(this.sprite, this.x, this.y);
+    }
+}
 
 class TextBox {
     constructor(text){
@@ -125,20 +152,24 @@ function startAnimating(maxFPS){
     animate();
 }
 function animate(){
-    ctx.font = "12px Arial";
+    ctx.font = "12px Courier";
     requestAnimationFrame(animate);
     peeko_text.update();
     now = Date.now();
     elapsed = now - then;
     if (elapsed > fpsInterval){
+        dialogue_confirm.update();
+        
         then = now - (elapsed % fpsInterval);
         ctx.clearRect(0, 0, CANVAS_WIDTH, CANVAS_HEIGHT);
         ctx.drawImage(speech_bubble_sprite, 210, 0, 150, 150);
         ctx.drawImage(character_sprite, 0, 0, 450, 450);
+        dialogue_confirm.draw();
         peeko_text.draw();
     }
     
     
 }
 let peeko_text = new TextBox(lines);
-startAnimating(10);
+let dialogue_confirm = new SpeechConfirmSprite(335,80);
+startAnimating(24);
