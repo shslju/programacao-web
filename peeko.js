@@ -11,6 +11,33 @@ let lines = [["odiando muito minha vida","kkkkkkk meu deus!!","100 thieves fundo
 let character_sprite = new Image();
 character_sprite.src = 'img/gemu/0/0-1.webp';
 
+
+class SpeechConfirmSprite {
+    constructor(x,y){
+        
+        this.sprite = new Image();
+        this.sprite.src = 'img/gemu/0/confirm.svg';
+        this.x = x;
+        this.y = y;
+        this.anim = 0;
+    }
+    update(){
+        if (this.anim < 5) {
+            this.y++;
+            this.anim++
+        } else if (this.anim < 10) {
+            this.y--;
+            this.anim++;
+        } else {
+            this.anim=0;
+        }
+        console.log("updating");
+    }
+    draw(){
+        ctx.drawImage(this.sprite, this.x, this.y);
+    }
+}
+
 class TextBox {
     constructor(text){
         this.text = text;
@@ -24,6 +51,7 @@ class TextBox {
         this.line_ptr = 0;
         this.txt_pointer = 0;
         this.timer=0;
+        this.confirmSprite = new SpeechConfirmSprite(335,80);
         this.list_char = new Array();
         this.end_enable = false;
         this.blip_sound_effect = new Audio("./sfx/sfx-blipmale.wav");
@@ -36,6 +64,7 @@ class TextBox {
                 this.add_character_to_draw();
             }
         }
+        this.confirmSprite.update();
 
     }
     add_character_to_list(char, x, y){
@@ -72,6 +101,7 @@ class TextBox {
             let item = this.list_char[i];
             this.draw_character(item[0], item[1], item[2]);
         }
+        this.confirmSprite.draw();
     }
     draw_character(char,x,y){
         ctx.fillText(char, x, y);
@@ -131,6 +161,14 @@ function startAnimating(maxFPS){
     startTime = then;
     animate();
 }
+
+
+canvas.addEventListener('click', function(evt){
+    let x = evt.x;
+    let y = evt.y;
+    
+})
+
 function animate(){
     ctx.font = "12px Courier";
     requestAnimationFrame(animate);
