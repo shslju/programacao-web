@@ -1,15 +1,18 @@
 const canvas = document.getElementById("game-canvas");
 const ctx = canvas.getContext("2d");
 const blip_audio = new Audio("./sfx/sfx-blipmale.wav");
+const confirm_audio = new Audio("./sfx/sfx-confirm.wav");
+const dialogue_start_audio = new Audio("./sfx/sfx-dialogue-start.wav")
 //add a button audio here!!
 const CANVAS_WIDTH = (canvas.width = 640);
 const CANVAS_HEIGHT = (canvas.height = 480);
 const maxFPS = 15;
+let object_list = new Array();
 var then, now, elapsed, fpsInterval;
 const textSpeed = 0.06;
 let lines = [
     ["odiando muito minha vida", "kkkkkkk meu deus!!", "100 thieves flop do ano"],
-    ["viva shslmoiry", "maybe i like maroqs"],
+    ["viva shslmoiry", "no i love overwatch"],
 ];
 
 let character_sprite = new Image();
@@ -49,6 +52,48 @@ class SpeechConfirmSprite {
     }
 }
 
+class DialogueStartSprite {
+    constructor(x, y) {
+        this.sprite_chatbox = new Image();
+        this.sprite_exclamation = new Image();
+        this.sprite_chatbox.src = "img/gemu/0/chat-square.svg";
+        this.sprite_exclamation.src = "img/gemu/0/exclamation-lg.svg";
+        this.chatbox_width = 80;
+        this.chatbox_height = 80;
+        this.exclamation_width = 60;
+        this.exclamation_height = 45;
+        this.x_c = x;
+        this.y_c = y;
+        this.audio = dialogue_start_audio;
+
+        this.x_e = x + 9;
+        this.y_e = y + 5;
+        this.anim = 0;
+        this.visible = false;
+    }
+    mouse_handler() {
+        this.audio.play();
+        object_list.pop();
+        var dialogue_peeko = new DialogueSprite(lines);
+        object_list.push(dialogue_peeko);
+    }
+    update() {
+        if (this.anim < 5) {
+            this.y_e++;
+            this.anim++;
+        } else if (this.anim < 10) {
+            this.y_e--;
+            this.anim++;
+        } else {
+            this.anim = 0;
+        }
+    }
+    draw() {
+        ctx.drawImage(this.sprite_chatbox, this.x_c, this.y_c, this.chatbox_width, this.chatbox_height);
+        ctx.drawImage(this.sprite_exclamation, this.x_e, this.y_e, this.exclamation_width, this.exclamation_height);
+    }
+}
+
 class TextBox {
     constructor(text) {
         this.text = text;
@@ -73,6 +118,7 @@ class TextBox {
         this.list_char = new Array();
 
         this.end_enable = false;
+        this.confirm_sfx = confirm_audio;
         this.blip_sound_effect = blip_audio;
         this.blip_sound_effect.volume = 0.01;
         //state = 0 - drawing
@@ -134,6 +180,7 @@ class TextBox {
     }
     mouse_handler() {
         if (this.state) {
+            this.confirm_sfx.cloneNode().play();
             this.call_next_dialogue_box();
         } else {
             this.finish_writing_box();
@@ -241,16 +288,25 @@ function animate() {
     now = Date.now();
     elapsed = now - then;
     if (elapsed > fpsInterval) {
-        dialogue_peeko.textbox.update();
+
         then = now - (elapsed % fpsInterval);
         ctx.clearRect(0, 0, CANVAS_WIDTH, CANVAS_HEIGHT);
-        dialogue_peeko.update();
         ctx.drawImage(character_sprite, 0, 0, 450, 450);
-        dialogue_peeko.textbox.draw();
+        for (let i = 0; i < object_list.length; i++) {
+            object_list[i].update();
+        }
+        for (let i = 0; i < object_list.length; i++) {
+            object_list[i].draw();
+        }
     }
 }
-let dialogue_peeko = new DialogueSprite(lines);
+let dialogue_start_sp = new DialogueStartSprite(185, 50);
+object_list.push(dialogue_start_sp);
+
 startAnimating(30);
+let start_response = false;
 canvas.addEventListener("click", function (evt) {
-    dialogue_peeko.mouse_handler();
+    for (let i = 0; i < object_list.length; i++) {
+        object_list[i].mouse_handler();
+    }
 });
