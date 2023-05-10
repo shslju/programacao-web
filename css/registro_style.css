@@ -1,0 +1,40 @@
+*{
+    font-family: 'Courier New', Courier, monospace;
+}
+body{
+    background-color: rgb(253, 235, 208);
+}
+.navbar-custom {
+    background-color: rgb(253, 235, 208);
+}
+
+#register-button{
+    background-color: rgb(91, 62, 44);
+}
+
+.btn-xl {
+    padding: 1rem 2rem
+}
+.btn-primary, 
+.btn-primary:hover {
+    background-color: #D5A021;
+    border-color: #D5A021;
+}
+.btn-primary:active,
+.btn-primary:focus {
+    color: #fff;
+    background-color: #D5A021 !important;
+    border-color: #D5A021 !important;
+    box-shadow: 0 0 0 0.2rem rgba(213,160,33, 0.5) !important;
+}
+
+a, a:visited {
+    color: rgb(229, 119, 30) !important;
+}
+
+a:hover, a:active {
+    color: rgb(255, 119, 100) !important;
+}
+.custom-checkbox .custom-control-input.my-error~.custom-control-label::before{
+    background-color:orangered;
+}

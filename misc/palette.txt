@@ -1,0 +1,5 @@
+rgb(249, 244, 227) // white
+rgb(242, 162, 42) // goldenrod yellow
+rgb(117, 199, 174) // teal
+rgb(91, 62, 44) // brown
+rgb(229, 119, 30) // red
