@@ -1,5 +1,11 @@
 const canvas = document.getElementById("game-canvas");
 const ctx = canvas.getContext("2d");
+//cores
+const RED = "rgb(229, 119, 30)"
+const BROWN = "rgb(91, 62, 44)"
+const WHITE = "rgb(255,255,255)"
+const BLACK = "rgb(0,0,0)"
+
 const blip_audio = new Audio("./sfx/sfx-blipmale.wav");
 const confirm_audio = new Audio("./sfx/sfx-confirm.wav");
 const dialogue_start_audio = new Audio("./sfx/sfx-dialogue-start.wav")
@@ -10,14 +16,66 @@ const maxFPS = 15;
 let object_list = new Array();
 var then, now, elapsed, fpsInterval;
 const textSpeed = 0.06;
-let lines = [
-    ["odiando muito minha vida", "kkkkkkk meu deus!!", "100 thieves flop do ano"],
-    ["viva shslmoiry", "no i love overwatch"],
-];
+
+function elementFromHtml(html) {
+    const template = document.createElement("template");
+    template.innerHTML = html.trim();
+    return template.content.firstElementChild;
+}
+let dialogue1 = {
+    lines: [
+        ["hmmmm......!", "minha memória está ruim..."],
+        ["eu já te vi por", "aqui?"],
+    ],
+    decision: [
+        "Sim!",
+        "Não......"
+    ]
+}
 
 let character_sprite = new Image();
 character_sprite.src = "img/gemu/0/0-1.webp";
-
+class actionButton {
+    constructor(x, y, text, color) {
+        this.x = x;
+        this.y = y;
+        this.width = 200;
+        this.height = 60;
+        this.text = text
+        this.color = color;
+        this.radius = 5;
+        this.size = 23;
+        this.text_width = 13 * this.text.length;
+    }
+    isInside() {
+        console.log(mousePos.x)
+        return mousePos.x > this.x && mousePos.x < this.x + this.width && mousePos.y < this.y + this.height && mousePos.y > this.y;
+    }
+    update() {
+        if (this.isInside()) {
+            this.color = BROWN;
+        } else {
+            this.color = RED;
+        }
+    }
+    mouse_handler() {
+        if (this.isInside()) {
+            window.location.href = "register.html"
+        }
+        return 1;
+    }
+    draw() {
+        ctx.fillStyle = this.color;
+        ctx.roundRect(this.x, this.y, this.width, this.height, this.radius);
+        ctx.fill();
+        this.draw_text();
+    }
+    draw_text() {
+        ctx.fillStyle = WHITE;
+        ctx.font = "23px Courier";
+        ctx.fillText(this.text, this.x + (this.width / 2) - (this.text_width / 2), this.y + (this.height / 2) + 6);
+    }
+}
 class SpeechConfirmSprite {
     constructor(x, y) {
         this.sprite = new Image();
@@ -74,7 +132,7 @@ class DialogueStartSprite {
     mouse_handler() {
         this.audio.play();
         object_list.pop();
-        var dialogue_peeko = new DialogueSprite(lines);
+        var dialogue_peeko = new DialogueSprite(dialogue1);
         object_list.push(dialogue_peeko);
     }
     update() {
@@ -96,7 +154,8 @@ class DialogueStartSprite {
 
 class TextBox {
     constructor(text) {
-        this.text = text;
+        this.text = text.lines;
+        this.decision = text.decision;
         this.x = 222;
         this.y = 48;
         this.last_x = this.x;
@@ -123,6 +182,7 @@ class TextBox {
         this.blip_sound_effect.volume = 0.01;
         //state = 0 - drawing
         //state = 1 - paused
+        //state = 2 - decision
         this.state = 0;
     }
     update_width_sprite() {
@@ -141,15 +201,21 @@ class TextBox {
         this.confirmSprite.update();
     }
     call_next_dialogue_box() {
-        this.dialogue_ptr++;
-        this.get_largest_phrase_size();
-        this.update_width_sprite();
-        this.confirmSprite.calc_new_x_on_txt_width(this.x, this.width);
-        this.list_char.length = 0;
-        this.line_ptr = 0;
-        this.txt_pointer = 0;
-        this.state = 0;
-        this.confirmSprite.visible = false;
+        if (this.dialogue_ptr < this.text.length - 1) {
+            this.dialogue_ptr++;
+            this.get_largest_phrase_size();
+            this.update_width_sprite();
+            this.confirmSprite.calc_new_x_on_txt_width(this.x, this.width);
+            this.list_char.length = 0;
+            this.line_ptr = 0;
+            this.txt_pointer = 0;
+            this.state = 0;
+            this.confirmSprite.visible = false;
+            return 1;
+        } else {
+            return 0;
+        }
+
     }
     finish_writing_box() {
         this.skip = true;
@@ -179,10 +245,19 @@ class TextBox {
         this.confirmSprite.visible = true;
     }
     mouse_handler() {
-        if (this.state) {
-            this.confirm_sfx.cloneNode().play();
-            this.call_next_dialogue_box();
-        } else {
+        if (this.state == 1) {
+            if (this.call_next_dialogue_box()) {
+                this.confirm_sfx.cloneNode().play();
+            } else {
+                if (this.decision != null) {
+                    this.state = 2;
+                    this.confirmSprite.visible = false;
+                    for (let i = 0; i < this.decision.length; i++) {
+                        object_list.push(new actionButton(350, 100 + (90 * i), this.decision[i], RED))
+                    }
+                }
+            }
+        } else if (this.state == 0) {
             this.finish_writing_box();
             this.pause_box();
         }
@@ -231,6 +306,7 @@ class TextBox {
         this.lrgst_phrase_currt_dialog = maior;
     }
     draw() {
+        ctx.fillStyle = BLACK;
         for (let i = 0; i < this.list_char.length; i++) {
             let item = this.list_char[i];
             this.draw_character(item[0], item[1], item[2]);
@@ -267,10 +343,12 @@ class DialogueSprite {
     update() {
         this.width = this.textbox.width;
         this.control_animation();
-        this.draw();
+        this.textbox.update();
+
     }
     draw() {
         ctx.drawImage(this.sprite, this.x, this.y, this.width, this.height);
+        this.textbox.draw();
     }
 }
 
@@ -302,9 +380,19 @@ function animate() {
 }
 let dialogue_start_sp = new DialogueStartSprite(185, 50);
 object_list.push(dialogue_start_sp);
-
+var mousePos = {
+    x: undefined,
+    y: undefined
+}
 startAnimating(30);
 let start_response = false;
+canvas.addEventListener("mousemove", function (evt) {
+    var rect = canvas.getBoundingClientRect();
+    let x = (evt.clientX - rect.left) / (rect.right - rect.left) * canvas.width;
+    let y = (evt.clientY - rect.top) / (rect.bottom - rect.top) * canvas.height;
+    mousePos.x = x;
+    mousePos.y = y;
+})
 canvas.addEventListener("click", function (evt) {
     for (let i = 0; i < object_list.length; i++) {
         object_list[i].mouse_handler();
