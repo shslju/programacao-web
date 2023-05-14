@@ -29,12 +29,13 @@ let dialogue1 = {
     ],
     decision: [
         "Sim!",
-        "Não......"
+        "Não....."
     ]
 }
 
 let character_sprite = new Image();
 character_sprite.src = "img/gemu/0/0-1.webp";
+
 class actionButton {
     constructor(x, y, text, color) {
         this.x = x;
@@ -46,27 +47,30 @@ class actionButton {
         this.radius = 5;
         this.size = 23;
         this.text_width = 13 * this.text.length;
+        this.selected = undefined;
     }
     isInside() {
-        console.log(mousePos.x)
-        return mousePos.x > this.x && mousePos.x < this.x + this.width && mousePos.y < this.y + this.height && mousePos.y > this.y;
+        this.selected = mousePos.x > this.x && mousePos.x < this.x + this.width && mousePos.y < this.y + this.height && mousePos.y > this.y;
+        console.log(this.selected)
     }
     update() {
-        if (this.isInside()) {
+        this.isInside()
+        if (this.selected) {
             this.color = BROWN;
         } else {
             this.color = RED;
         }
     }
     mouse_handler() {
-        if (this.isInside()) {
+        this.isInside()
+        if (this.selected) {
             window.location.href = "register.html"
         }
-        return 1;
     }
     draw() {
-        ctx.fillStyle = this.color;
+        ctx.beginPath();
         ctx.roundRect(this.x, this.y, this.width, this.height, this.radius);
+        ctx.fillStyle = this.color;
         ctx.fill();
         this.draw_text();
     }
@@ -253,7 +257,7 @@ class TextBox {
                     this.state = 2;
                     this.confirmSprite.visible = false;
                     for (let i = 0; i < this.decision.length; i++) {
-                        object_list.push(new actionButton(350, 100 + (90 * i), this.decision[i], RED))
+                        object_list.push(new actionButton(350, 100 + (80 * i), this.decision[i], RED))
                     }
                 }
             }
