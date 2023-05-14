@@ -1,0 +1,20 @@
+body{
+    background-color: rgb(255, 243, 225);
+}
+#game-body{
+    background-color: inherit;
+    height:480px;
+    position:fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%,-45%);
+}
+#game-canvas{
+    border: 5px brown;
+    position:fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%,-45%);
+    width: 640px;
+    height: 480px;
+}
