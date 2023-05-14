@@ -26,6 +26,8 @@ function elementFromHtml(html) {
 template para criação de dialogos hihihihi
 let dialogue = {
     lines: [
+        [""],
+        [""]
     ],
     decision: [
     ]
@@ -33,17 +35,36 @@ let dialogue = {
 */
 //0: nova caixa de dialogo
 //1: redireção
-let dialogue1 = {
+let dialogue_list = [{
     lines: [
         ["hmmmm......!", "minha memória está ruim..."],
-        ["eu já te vi por", "aqui?"],
+        ["eu já te vi por ", "aqui?"],
     ],
     decision: [
-        ["Sim!", [0, 2]],
-        ["Não.....", [1, "register.html"]]
+        ["Sim!", [0, 1]],
+        ["Não.....", [0, 2]]
+    ]
+},
+{
+    lines: [
+        ["Então por favor ", "insira suas", "credenciais!"],
+    ],
+    decision: [
+        ["PSYDUCK", [1, "psyduck.html"]],
+        ["SCORBUNNY", [1, "scorbunny.html"]],
+        ["????", [1, "#"]]
+    ]
+},
+{
+    lines: [
+        ["Então por favor ", "se registre!"],
+    ],
+    decision: [
+        ["Ok!", [1, "register.html"]]
     ]
 }
 
+]
 
 let character_sprite = new Image();
 character_sprite.src = "img/gemu/0/0-1.webp";
@@ -54,8 +75,8 @@ class actionButton {
         this.y = y;
         this.width = 200;
         this.height = 60;
-        console.log(text)
         this.text = text[0]
+        this.action = text[1]
         this.color = color;
         this.radius = 5;
         this.size = 23;
@@ -83,10 +104,26 @@ class actionButton {
 
         }
     }
+    exec_action() {
+        switch (this.action[0]) {
+            case 0:
+                let a = object_list.length;
+                for (let i = 0; i < a; i++) {
+                    object_list.pop();
+                }
+                object_list.push(new DialogueSprite(dialogue_list[this.action[1]]))
+                break;
+            case 1:
+                window.location.href = this.action[1];
+                break;
+            default:
+                return 0;
+        }
+    }
     mouse_handler() {
         this.isInside()
         if (this.selected) {
-            window.location.href = "register.html"
+            this.exec_action();
         }
     }
     draw() {
@@ -158,7 +195,7 @@ class DialogueStartSprite {
     mouse_handler() {
         this.audio.play();
         object_list.pop();
-        var dialogue_peeko = new DialogueSprite(dialogue1);
+        var dialogue_peeko = new DialogueSprite(dialogue_list[0]);
         object_list.push(dialogue_peeko);
     }
     update() {
