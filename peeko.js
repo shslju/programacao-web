@@ -22,16 +22,28 @@ function elementFromHtml(html) {
     template.innerHTML = html.trim();
     return template.content.firstElementChild;
 }
+/*
+template para criação de dialogos hihihihi
+let dialogue = {
+    lines: [
+    ],
+    decision: [
+    ]
+}
+*/
+//0: nova caixa de dialogo
+//1: redireção
 let dialogue1 = {
     lines: [
         ["hmmmm......!", "minha memória está ruim..."],
         ["eu já te vi por", "aqui?"],
     ],
     decision: [
-        "Sim!",
-        "Não....."
+        ["Sim!", [0, 2]],
+        ["Não.....", [1, "register.html"]]
     ]
 }
+
 
 let character_sprite = new Image();
 character_sprite.src = "img/gemu/0/0-1.webp";
@@ -42,12 +54,15 @@ class actionButton {
         this.y = y;
         this.width = 200;
         this.height = 60;
-        this.text = text
+        console.log(text)
+        this.text = text[0]
         this.color = color;
         this.radius = 5;
         this.size = 23;
         this.text_width = 13 * this.text.length;
         this.selected = undefined;
+        this.audio = dialogue_start_audio;
+        this.audio_played = false;
     }
     isInside() {
         this.selected = mousePos.x > this.x && mousePos.x < this.x + this.width && mousePos.y < this.y + this.height && mousePos.y > this.y;
@@ -56,9 +71,16 @@ class actionButton {
     update() {
         this.isInside()
         if (this.selected) {
+            if (!this.audio_played) {
+                let a = this.audio.cloneNode();
+                a.play();
+                this.audio_played = true;
+            }
             this.color = BROWN;
         } else {
             this.color = RED;
+            this.audio_played = false;
+
         }
     }
     mouse_handler() {
@@ -257,6 +279,7 @@ class TextBox {
                     this.state = 2;
                     this.confirmSprite.visible = false;
                     for (let i = 0; i < this.decision.length; i++) {
+                        console.log(this.decision[i])
                         object_list.push(new actionButton(350, 100 + (80 * i), this.decision[i], RED))
                     }
                 }
