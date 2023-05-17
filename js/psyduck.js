@@ -2,6 +2,8 @@ const canvas = document.getElementById("game-canvas");
 const ctx = canvas.getContext('2d');
 //pokemon constants
 const WHITE = "rgb(255,255,255)"
+const BLACK = "rgb(0,0,0)"
+const GRAY = "rgb(69,69,69)"
 const type_colors = ['#A8A77A',
     '#EE8130',
     '#6390F0',
@@ -66,8 +68,10 @@ const main_char_walk_cycle_src = [
     '../img/gemu/1/char/psyduck/2.png'
 ]
 
+
 //0-field
 //1-battle
+//2-attack-anim
 //3-result?
 //4-fuck me
 var game_state = 0
@@ -114,6 +118,7 @@ class Creature {
         this.in_scene = true;
         this.x = 340;
         this.y = 90;
+        this.interactable = false;
     }
     update() {
     }
@@ -132,6 +137,20 @@ function getEncounterByStage(gs) {
     console.log(chosen_one)
     return encounters[gs][chosen_one];
 }
+function setUpBattleScene() {
+    object_list.push(battle_bg);
+    object_list.push(new battlePadSprite(70, 350));
+    object_list.push(new battlePadSprite(300, 150));
+    main_char = new MainCharacter();
+    object_list.push(main_char);
+    main_char.changeState(1);
+
+    let encounter_name = getEncounterByStage(game_stage);
+    object_list.push(new Creature(encounter_name));
+    for (let i = 0; i < 4; i++) {
+        object_list.push(new attackButton(390, 280 + (i * 40), main_char.attacks_list[i]));
+    }
+}
 function changeGameState(state) {
     let a = object_list.length;
     for (let i = 0; i < a; i++) {
@@ -141,29 +160,21 @@ function changeGameState(state) {
     switch (state) {
         case 0:
             break;
+        //change scene to battle
         case 1:
-            object_list.push(new BattleBgSprite());
-            object_list.push(new battlePadSprite(70, 350));
-            object_list.push(new battlePadSprite(300, 150));
+            setUpBattleScene();
+            break;
+        //change scene to anim
+        case 2:
+            object_list.push(battle_bg);
             main_char = new MainCharacter();
             object_list.push(main_char);
-            main_char.stage = 3;
-            main_char.current_sprite = main_char.back_sprite;
-            main_char.x = main_char.battle_x;
-            main_char.y = main_char.battle_y;
-
-            let encounter_name = getEncounterByStage(game_stage);
-            object_list.push(new Creature(encounter_name));
-            for (let i = 0; i < 4; i++) {
-                object_list.push(new attackButton(390, 280 + (i * 40), main_char.attacks_list[i]));
-            }
-
+            main_char.changeState(2);
         default:
             break;
     }
 }
 function handleEncounter() {
-
     changeGameState(1);
 }
 class battlePadSprite {
@@ -172,6 +183,7 @@ class battlePadSprite {
         this.y = y;
         this.current_sprite = new Image();
         this.current_sprite.src = '../img/gemu/1/bg/battle_pad.png';
+        this.interactable = false;
     }
     update() {
     }
@@ -190,13 +202,13 @@ class attackButton {
         this.attack = attack;
         this.text = this.attack.name;
         this.color = type_colors[this.attack.type - 1];
-        this.radius = 5;
+        this.radius = 10;
         this.size = 23;
         this.text_width = 13 * this.text.length;
         this.selected = undefined;
         this.audio_hover = new Audio("../sfx/sfx-hover-attack-button.wav");
         this.audio_select = new Audio("../sfx/sfx-select-attack-button.wav")
-
+        this.interactable = true;
         this.audio_played = false;
     }
     isInside() {
@@ -216,29 +228,24 @@ class attackButton {
         }
     }
     exec_action() {
-        switch (this.action[0]) {
-            case 0:
-                let a = object_list.length;
-                for (let i = 0; i < a; i++) {
-                    object_list.pop();
-                }
-                object_list.push(new DialogueSprite(dialogue_list[this.action[1]]))
-                break;
-            case 1:
-                window.location.href = this.action[1];
-                break;
-            default:
-                return 0;
-        }
+        changeGameState(2);
     }
     mouse_handler() {
         this.isInside()
+        console.log(this.selected);
         if (this.selected) {
             this.audio_select.play();
             this.exec_action();
         }
     }
     draw() {
+        if (this.selected) {
+            ctx.beginPath();
+            ctx.roundRect(this.x - 2, this.y - 2, this.width + 4, this.height + 4, this.radius);
+            ctx.fillStyle = BLACK;
+            ctx.fill();
+
+        }
         ctx.beginPath();
         ctx.roundRect(this.x, this.y, this.width, this.height, this.radius);
         ctx.fillStyle = this.color;
@@ -246,9 +253,14 @@ class attackButton {
         this.draw_text();
     }
     draw_text() {
+        ctx.font = "21px Arial";
+        ctx.strokeStyle = BLACK;
+        ctx.lineWidth = 3;
+        ctx.lineJoin = "round";//can be bevel or round
+        ctx.miterLimit = 2;
+        ctx.strokeText(this.text, this.x + (this.width / 10), this.y + (this.height / 2) + 7);
         ctx.fillStyle = WHITE;
-        ctx.font = "21px Courier";
-        ctx.fillText(this.text, this.x + (this.width / 10), this.y + (this.height / 2) + 6);
+        ctx.fillText(this.text, this.x + (this.width / 10), this.y + (this.height / 2) + 7);
     }
 }
 class BattleBgSprite {
@@ -257,6 +269,7 @@ class BattleBgSprite {
         this.y = 0;
         this.current_sprite = new Image();
         this.current_sprite.src = '../img/gemu/1/bg/battle-bg.png';
+        this.interactable = false;
     }
     update() {
     }
@@ -269,15 +282,9 @@ class SkySprite {
     constructor() {
         this.x = 0;
         this.y = 0;
-        /* this.walk_cycle_sprite = new Array();
-        for (let i = 0; i < main_char_walk_cycle_src.length; i++) {
-            this.walk_cycle_sprite.push(new Image(200, 200));
-            this.walk_cycle_sprite[i].src = main_char_walk_cycle_src[i];
-        } */
         this.current_sprite = new Image();
         this.current_sprite.src = '../img/gemu/1/bg/alpha_sky.png';
-        //stage = 1 walk
-        this.stage = 1
+        this.interactable = false;
     }
     update() {
     }
@@ -295,6 +302,7 @@ class attBubbleSprite {
         this.sprite.src = '../img/gemu/1/att-icon.png'
         this.sound_played = false;
         this.sound = new Audio("../sfx/sfx-encounter-sound.wav");
+        this.interactable = false;
     }
     update() {
         if (!this.sound_played) {
@@ -312,6 +320,7 @@ class GroundSprite {
         this.y = 320;
         this.current_sprite = new Image();
         this.current_sprite.src = '../img/gemu/1/bg/alpha_ground.png';
+        this.interactable = false;
     }
     update() {
     }
@@ -326,24 +335,33 @@ class Attack {
         this.type = type;
         this.power = power;
         this.is_phys = is_phys;
+        this.interactable = false;
     }
 }
 class MainCharacter {
     constructor() {
-        this.x = 225;
-        this.y = 180;
+        this.field_x = 225;
+        this.field_y = 180;
+        this.x = this.field_x;
+        this.y = this.field_y;
         this.battle_x = 110;
         this.battle_y = 230;
+        this.attack_anim_x = 135;
+        this.attack_anim_y = 100;
+        // sprite import and creation;
+        // since i am creating a new character object all the time, maybe already import sprites at beginning of execution and then just assign here...
         this.walk_cycle_sprite = new Array();
         for (let i = 0; i < main_char_walk_cycle_src.length; i++) {
             this.walk_cycle_sprite.push(new Image(200, 200));
             this.walk_cycle_sprite[i].src = main_char_walk_cycle_src[i];
         }
         this.current_sprite = this.walk_cycle_sprite[0];
-        this.att_sprite = new Image();
-        this.att_sprite.src = '../img/gemu/1/char/psyduck/att.png'
+        this.attention_sprite = new Image();
+        this.attention_sprite.src = '../img/gemu/1/char/psyduck/att.png'
         this.back_sprite = new Image();
         this.back_sprite.src = '../img/gemu/1/char/psyduck/btl-0.png';
+        this.attack_sprite = new Image();
+        this.attack_sprite.src = '../img/gemu/1/char/psyduck/btl-1.png';
         this.walk_cycle_ptr = 0;
         this.walk_cycle_ptr_dir = 1;
         //ataques
@@ -354,31 +372,76 @@ class MainCharacter {
         this.attacks_list.push(new Attack("Mud Shot", GROUND, 55, false));
         this.attack_stat = 114
         this.sp_attack_stat = 128
-        //stage = 1 walk
+        this.visible = true;
+        this.interactable = false;
+        //stage = 0 walk
+        //state = 1 battle
         //stage = 2 attention
         //stage = 3 battle back
         //stage
-        this.stage = 1
+        this.state = 0
+        this.anim_cont = 0;
     }
     update() {
-        if (this.stage == 1) {
-            if (this.walk_cycle_ptr == 2) {
-                this.walk_cycle_ptr_dir = -1;
-            } else if (this.walk_cycle_ptr == 0) {
-                this.walk_cycle_ptr_dir = 1;
+        console.log(this.y);
+        if (this.state == 0) {
+            if (this.anim_cont % 6 == 0) {
+                if (this.walk_cycle_ptr == 2) {
+                    this.walk_cycle_ptr_dir = -1;
+                } else if (this.walk_cycle_ptr == 0) {
+                    this.walk_cycle_ptr_dir = 1;
+                }
+                this.walk_cycle_ptr = this.walk_cycle_ptr + this.walk_cycle_ptr_dir;
+                this.current_sprite = this.walk_cycle_sprite[Math.floor(this.walk_cycle_ptr)];
             }
-            this.walk_cycle_ptr = this.walk_cycle_ptr + this.walk_cycle_ptr_dir;
-            this.current_sprite = this.walk_cycle_sprite[this.walk_cycle_ptr];
+            this.anim_cont++;
+            if (this.anim_cont > 1000) {
+                this.anim_cont = 0;
+            }
+
+        } else if (this.state == 2) {
+            if (this.y > 30) {
+                this.y--;
+            } else if (this.y == 30) {
+                this.visible = false;
+            }
         }
     }
     draw() {
-        ctx.drawImage(this.current_sprite, this.x, this.y);
+        if (this.visible) {
+            ctx.drawImage(this.current_sprite, this.x, this.y);
+        }
+
+    }
+    changeCoordinates(new_x, new_y) {
+        this.x = new_x;
+        this.y = new_y;
+    }
+    changeState(state) {
+        this.state = state;
+        switch (state) {
+            case 0:
+                this.current_sprite = this.walk_cycle_sprite[0]
+                this.changeCoordinates(this.field_x, this.field_y);
+                break;
+            case 1:
+                this.current_sprite = this.back_sprite;
+                this.changeCoordinates(this.battle_x, this.battle_y);
+                break;
+            case 2:
+                this.current_sprite = this.attack_sprite;
+                this.changeCoordinates(this.attack_anim_x, this.attack_anim_y);
+            default:
+                break;
+        }
     }
 }
 
 var then, now, elapsed, fpsInterval;
 let object_list = new Array();
 let main_char = new MainCharacter();
+const battle_bg = new BattleBgSprite();
+
 object_list.push(new SkySprite());
 object_list.push(new GroundSprite());
 object_list.push(main_char);
@@ -400,7 +463,7 @@ function animate() {
     if (elapsed > fpsInterval) {
         if (game_state == 0) {
             let chance = Math.floor(Math.random() * 101);
-            if (chance <= 50) {
+            if (chance == 5) {
                 handleEncounter();
             }
         }
@@ -414,11 +477,11 @@ function animate() {
             object_list[i].draw();
         }
         console.log(toString(game_stage));
-        let texty = "stage " + toString(game_stage);
-        ctx.fillText(texty, 0, 10);
+        let texty = "stage " + game_stage;
+        ctx.fillText(texty, 10, 20);
     }
 }
-startAnimating(5);
+startAnimating(30);
 var mousePos = {
     x: undefined,
     y: undefined
@@ -432,6 +495,9 @@ canvas.addEventListener("mousemove", function (evt) {
 })
 canvas.addEventListener("click", function (evt) {
     for (let i = 0; i < object_list.length; i++) {
-        object_list[i].mouse_handler();
+        if (object_list[i].interactable) {
+            object_list[i].mouse_handler();
+        }
+
     }
 });
