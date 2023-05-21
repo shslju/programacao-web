@@ -1,9 +1,15 @@
 const canvas = document.getElementById("game-canvas");
 const ctx = canvas.getContext('2d');
-//pokemon constants
+const fps = 30;
+//colors
 const WHITE = "rgb(255,255,255)"
 const BLACK = "rgb(0,0,0)"
 const GRAY = "rgb(69,69,69)"
+const BLUE = "rgb(49,151,255)"
+const LIGHT_BLUE = "rgb(153,217,234)"
+// what layer is currently beign displayed
+var layer = 0;
+//pokemon constants
 const type_colors = ['#A8A77A',
     '#EE8130',
     '#6390F0',
@@ -62,30 +68,118 @@ const type_matchups = [[1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0.5, 0, 1, 1, 0.5, 1
 const CANVAS_WIDTH = (canvas.width = 640);
 const CANVAS_HEIGHT = (canvas.height = 480);
 
+// hit_animation load
+const hit_animation_src = [
+    '../img/gemu/1/misc/hit0-0.png',
+    '../img/gemu/1/misc/hit0-1.png',
+    '../img/gemu/1/misc/hit0-2.png',
+    '../img/gemu/1/misc/hit0-3.png'
+]
+let hit_animation = []
+for (let i = 0; i < 4; i++) {
+    hit_animation.push(new Image());
+    hit_animation[i].src = hit_animation_src[i];
+}
+// battle pad sprite load
+let battle_pad_sprite = new Image();
+battle_pad_sprite.src = '../img/gemu/1/bg/battle_pad.png';
+
+let cut_in_bg = new Image();
+cut_in_bg.src = '../img/gemu/1/misc/cutin.png';
+
 const main_char_walk_cycle_src = [
     '../img/gemu/1/char/psyduck/0.png',
     '../img/gemu/1/char/psyduck/1.png',
     '../img/gemu/1/char/psyduck/2.png'
 ]
+const cutin_animation_boxes_initial_pos = [[550, 140],
+[615, 200],
+[540, 240],
+[480, 200],
+[430, 160],
+[290, 140],
+[210, 133],
+[180, 177],
+[166, 247],
+[67, 226],
+[-60, 130],
+[-40, 243]]
+
+const attack_animation_boxes_initial_pos = [[49, 115],
+[123, 451],
+[281, 460],
+[477, 467],
+[107, 360],
+[203, 401],
+[341, 434],
+[495, 403],
+[581, 424],
+[53, 266],
+[162, 311],
+[249, 300],
+[425, 282],
+[542, 289],
+[206, 172],
+[245, 219],
+[351, 213],
+[428, 157],
+[506, 186],
+[584, 204],
+[60, 116],
+[154, 79],
+[480, 102],
+[560, 102],
+[47, 2],
+[107, 33],
+[229, 21],
+[343, 31],
+[442, 17],
+[543, 19]
+]
+
+let creature_list = [
+    [
+        { name: 'karp', type1: WATER, type2: WATER, df: 103, sp_df: 40 }
+    ]]
+/*full creature list should only be added when all assets are drawn
+let creature_list = [
+    [
+        { name: 'karp', type1: WATER, type2: WATER, df: 103, sp_df: 40 },
+        { name: 'tyrogue', type1: FIGHTING, type2: FIGHTING, df: 67, sp_df: 67 },
+        { name: 'magby', type1: FIRE, type2: FIRE, df: 71, sp_df: 103 }
+    ],
+    [
+        { name: 'floette', type1: FAIRY, type2: FAIRY, df: 89, sp_df: 189 },
+        { name: 'boldore', type1: ROCK, type2: ROCK, df: 193, sp_df: 76 },
+        { name: 'fletchinder', type1: FIRE, type2: FLYING, df: 103, sp_df: 98 }
+    ],
+    [
+        { name: 'galvantula', type1: BUG, type2: ELECTRIC, df: 112, sp_df: 112 },
+        { name: 'gardevoir', type1: PSYCHIC, type2: FAIRY, df: 121, sp_df: 211 },
+        { name: 'camerupt', type1: FIRE, type2: GROUND, df: 130, sp_df: 139 }
+    ]]
+*/
 
 
-//0-field
-//1-battle
-//2-attack-anim
-//3-result?
-//4-fuck me
-var game_state = 0
-var game_stage = 0
-
+var game_state = 0;
+var game_stage = 0;
+var game_encounter = 0;
 /* 
     TO-DO LIST
     high priority-
-    FINISH BATTLE SCENE 
-    FINISH RANDOM ENCOUNTER SYSTEM
-    medium priority-
-    CREATE RANDOM ROCKS TO POPULATE GROUND
-    CREATE RANDOM FOLIAGE TO POPULATE GROUND
-    CREATE ANIMATED CLOUDS TO POPULATE SKY
+    
+    VICTORY SCREEN 
+    GAME OVER SCREEN
+    GAME END SCREEN
+
+    medium-high priority
+
+        MAKE SO THAT ALL IMAGES ARE LOADED AT BEGINNING 
+        EMOLGA ALLY COMPANION - WILL HELP YOU MAKE DECISIONS
+    medium priority- things to do after both games are done
+        CREATE RANDOM ROCKS TO POPULATE GROUND
+        CREATE RANDOM FOLIAGE TO POPULATE GROUND
+        CREATE ANIMATED CLOUDS TO POPULATE SKY
     ctx.save();
   ctx.lineWidth = 5;
   for (i=0;i<60;i++){
@@ -100,76 +194,275 @@ var game_stage = 0
   ctx.restore()
   useful code for later when creating particles for attack
 */
+class BoxesForAnimation {
+    constructor(x, y, type, width, height, speed, color) {
+        this.x = x;
+        this.y = y;
+        //1 for x animation;
+        //0 for y animation;
+        this.type = type;
+        this.width = width;
+        this.height = height;
+        this.speed = speed;
+        this.color = color;
+        this.anim_cont = 0;
+    }
+    update() {
+        if (this.type) {
+            this.x -= this.speed;
+        } else {
+            this.y -= this.speed;
+        }
+    }
+    draw() {
+        ctx.beginPath();
+        ctx.fillStyle = this.color;
+        ctx.rect(this.x, this.y, this.width, this.height);
+        ctx.fill();
+    }
+}
+//i separated this from cutin bg sprite so i could draw this in a upper layer
+class CutInCreatureSprite {
+    constructor(creature_sprite) {
+        this.creature_sprite = creature_sprite;
+        this.creature_x = 0;
+        this.creature_y = 105;
+        this.visible = true;
+    }
+    update() {
+    }
+    draw() {
+        if (this.visible) {
+            ctx.drawImage(this.creature_sprite, this.creature_x, this.creature_y);
+        }
+    }
+}
+
+class CutInBgSprite {
+    constructor(creature_sprite) {
+
+        this.bg = cut_in_bg;
+        this.bg_x = 0;
+        this.creature_sprite = creature_sprite;
+        this.bg_y = 100;
+        this.height = 160;
+        this.anim_cont = 1;
+        this.finished = false;
+        this.visible = true;
+    }
+    update() {
+    }
+    draw() {
+        if (this.visible) {
+            console.log(this.anim_cont);
+            if (this.anim_cont < 11) {
+                ctx.beginPath();
+                ctx.fillStyle = BLUE;
+                ctx.rect(0, this.bg_y + (this.height / 2) - (this.anim_cont * 8), 640, this.anim_cont * 16);
+                ctx.fill();
+                // create little boxes for animation in final frame of white thingy;
+                if (this.anim_cont == 10) {
+                    createAnimationBoxesFromPositionList(cutin_animation_boxes_initial_pos, 1, 90, 5, 5, LIGHT_BLUE);
+                    layer1.push(new CutInCreatureSprite(this.creature_sprite));
+                }
+            } else if (this.anim_cont < 41) {
+                ctx.drawImage(this.bg, this.bg_x, this.bg_y);
+            } else {
+                this.finished = true;
+                for (let i = 0; i < cutin_animation_boxes_initial_pos.length; i++) {
+                    layer0.pop();
+                }
+                emptyLayer(1);
+                this.visible = false;
+                changeGameState(5);
+            }
+            this.anim_cont++;
+        }
+    }
+}
+
 class Creature {
-    // name needs to be string;
-    constructor(name) {
+    constructor(name, type1, type2, df, sp_df) {
         this.name = name;
         let sprites_src = [
             '../img/gemu/1/char/' + this.name + '/0.png',
             '../img/gemu/1/char/' + this.name + '/1.png',
             '../img/gemu/1/char/' + this.name + '/2.png'
         ]
+        this.type1 = type1;
+        this.type2 = type2;
+        this.defense_stat = df;
+        this.sp_defense_stat = sp_df;
         this.sprites = new Array();
         for (let i = 0; i < sprites_src.length; i++) {
             this.sprites.push(new Image());
             this.sprites[i].src = sprites_src[i];
         }
         this.current_sprite = this.sprites[0];
-        this.in_scene = true;
-        this.x = 340;
-        this.y = 90;
+        this.visible = true;
+        this.normal_x = 340;
+        this.normal_y = 90;
+        this.attack_anim_x = 230;
+        this.attack_anim_y = 140;
+        this.x = this.normal_x;
+        this.y = this.normal_y;
+        this.state = 0;
+        this.anim_cont = 0;
         this.interactable = false;
+
+    }
+    changeState(state) {
+        this.state = state;
+        this.anim_cont = 0;
+        switch (state) {
+            case 0:
+                this.current_sprite = this.sprites[0]
+                this.changeCoordinates(this.normal_x, this.normal_y);
+                break;
+            case 1:
+                this.current_sprite = this.sprites[0];
+                this.changeCoordinates(this.attack_anim_x, this.attack_anim_y);
+                break;
+            default:
+                break;
+        }
+    }
+    changeCoordinates(new_x, new_y) {
+        this.x = new_x;
+        this.y = new_y;
     }
     update() {
+        if (this.state == 1) {
+            if (this.anim_cont == 30) {
+                object_list[0].push(new CutInBgSprite(this.sprites[2]));
+            }
+            this.anim_cont++;
+        }
     }
     draw() {
-        if (this.in_scene) {
+        if (this.visible) {
             ctx.drawImage(this.current_sprite, this.x, this.y);
         }
 
     }
 }
+function createAnimationBoxesFromPositionList(list, x_or_y, width, height, speed, color) {
+    for (let i = 0; i < list.length; i++) {
+        layer0.push(new BoxesForAnimation(list[i][0], list[i][1], x_or_y, width, height, speed, color));
+    }
+}
+
 function getEncounterByStage(gs) {
-    let number_of_encounters = encounters[gs].length;
-    let chosen_one = Math.floor(Math.random() * number_of_encounters);
-    console.log(encounters)
-    console.log(number_of_encounters)
-    console.log(chosen_one)
-    return encounters[gs][chosen_one];
+    let number_of_encounters = creature_list[gs].length;
+    game_encounter = Math.floor(Math.random() * number_of_encounters);
+    return creature_list[gs][game_encounter];
 }
 function setUpBattleScene() {
-    object_list.push(battle_bg);
-    object_list.push(new battlePadSprite(70, 350));
-    object_list.push(new battlePadSprite(300, 150));
+    object_list[0].push(battle_bg);
+    object_list[0].push(new battlePadSprite(70, 350));
+    object_list[0].push(new battlePadSprite(300, 150));
     main_char = new MainCharacter();
-    object_list.push(main_char);
+    object_list[0].push(main_char);
     main_char.changeState(1);
 
-    let encounter_name = getEncounterByStage(game_stage);
-    object_list.push(new Creature(encounter_name));
+    //create the creature object the add it to the list
+    let encounter_creature = getEncounterByStage(game_stage);
+    object_list[0].push(new Creature(encounter_creature.name, encounter_creature.type1, encounter_creature.type2, encounter_creature.df, encounter_creature.sp_df));
+    // create the damage array then get the index of the highest damage value choice
+    damage_list = new Array();
     for (let i = 0; i < 4; i++) {
-        object_list.push(new attackButton(390, 280 + (i * 40), main_char.attacks_list[i]));
+        damage_list.push(getDamageCalc(main_char.attacks_list[i], main_char, encounter_creature));
+    }
+    let correct_i = getCorrectChoice(damage_list);
+    let correct = false;
+    // create the attack buttons with info if they are the correct choice or not
+    for (let i = 0; i < 4; i++) {
+        if (i == correct_i) {
+            correct = true;
+        } else {
+            correct = false;
+        }
+        object_list[0].push(new attackButton(390, 280 + (i * 40), main_char.attacks_list[i], correct));
+    }
+
+
+}
+/*Remove todos os objetos de uma dada layer*/
+function emptyLayer(layer) {
+    let a = object_list[layer].length;
+    for (let i = 0; i < a; i++) {
+        object_list[layer].pop();
     }
 }
-function changeGameState(state) {
-    let a = object_list.length;
-    for (let i = 0; i < a; i++) {
-        object_list.pop();
+
+function setUpGameOverScene() {
+    object_list[0].push(new ColorBg(BLACK));
+}
+function setUpEnemyAttackScene() {
+    object_list[0].push(battle_bg);
+    object_list[0].push(new battlePadSprite(190, 200));
+    let encounter_creature = creature_list[game_stage][game_encounter];
+    let creature = new Creature(encounter_creature.name, encounter_creature.type1, encounter_creature.type2, encounter_creature.df, encounter_creature.sp_df)
+    object_list[0].push(creature);
+    creature.changeState(1);
+}
+
+function setUpFailAttackScene() {
+    object_list[0].push(battle_bg);
+    main_char = new MainCharacter();
+    createAnimationBoxesFromPositionList(attack_animation_boxes_initial_pos, 0, 5, 90, 1, WHITE);
+    object_list[1].push(main_char);
+    main_char.changeState(3);
+}
+
+function setUpVictoryScene() {
+    object_list[0].push(new ColorBg(Black));
+}
+
+function setUpChargeAttackScene() {
+    object_list[0].push(battle_bg);
+    main_char = new MainCharacter();
+    createAnimationBoxesFromPositionList(attack_animation_boxes_initial_pos, 0, 5, 90, 1, WHITE);
+    object_list[1].push(main_char);
+    main_char.changeState(2);
+}
+/*Dado uma array com os danos essa função retorn o indice do maior*/
+function getCorrectChoice(damage_list) {
+    maior = damage_list[0];
+    indice_maior = 0;
+    for (let i = 0; i < 4; i++) {
+        if (damage_list[i] > maior) {
+            maior = damage_list[i];
+            indice_maior = i;
+        }
     }
+    return indice_maior;
+}
+function changeGameState(state) {
+    emptyLayer(0);
+    emptyLayer(1);
     game_state = state;
     switch (state) {
         case 0:
             break;
-        //change scene to battle
-        case 1:
+        case 1: //change scene to battle
             setUpBattleScene();
             break;
-        //change scene to anim
-        case 2:
-            object_list.push(battle_bg);
-            main_char = new MainCharacter();
-            object_list.push(main_char);
-            main_char.changeState(2);
+        case 2: //change scene to psyduck sucessful anim
+            setUpChargeAttackScene();
+            break;
+        case 3: //change scene to psyduck fail anim
+            setUpFailAttackScene();
+            break;
+        case 4: //change scene to enemy attack anim
+            setUpEnemyAttackScene();
+            break;
+        case 5:
+            setUpGameOverScene();
+            break;
+        case 6:
+            setUpVictoryScene();
+            break;
         default:
             break;
     }
@@ -181,20 +474,21 @@ class battlePadSprite {
     constructor(x, y) {
         this.x = x;
         this.y = y;
-        this.current_sprite = new Image();
-        this.current_sprite.src = '../img/gemu/1/bg/battle_pad.png';
+        this.current_sprite = battle_pad_sprite;
         this.interactable = false;
+        this.visible = true;
     }
     update() {
     }
     draw() {
-        ctx.drawImage(this.current_sprite, this.x, this.y);
+        if (this.visible) {
+            ctx.drawImage(this.current_sprite, this.x, this.y);
+        }
+
     }
 }
-const encounters = [['karp']]
-
 class attackButton {
-    constructor(x, y, attack) {
+    constructor(x, y, attack, choice) {
         this.x = x;
         this.y = y;
         this.width = 200;
@@ -202,6 +496,7 @@ class attackButton {
         this.attack = attack;
         this.text = this.attack.name;
         this.color = type_colors[this.attack.type - 1];
+        this.correct = choice
         this.radius = 10;
         this.size = 23;
         this.text_width = 13 * this.text.length;
@@ -228,7 +523,12 @@ class attackButton {
         }
     }
     exec_action() {
-        changeGameState(2);
+        if (this.correct) {
+            changeGameState(2);
+        } else {
+            changeGameState(3);
+        }
+
     }
     mouse_handler() {
         this.isInside()
@@ -263,6 +563,46 @@ class attackButton {
         ctx.fillText(this.text, this.x + (this.width / 10), this.y + (this.height / 2) + 7);
     }
 }
+function getDamageCalc(attack, char, oppose) {
+    let level = 50;
+    let level_scale = ((2 * level) / 5) + 2;
+    let stab = 1;
+    if (attack.is_phys) {
+        a = char.attack_stat;
+        d = oppose.defense_stat;
+    } else {
+        a = char.sp_attack_stat;
+        d = oppose.sp_defense_stat;
+    }
+    if (attack.type == char.type_one || attack.type == char.type_two) {
+        stab = 1.5
+    }
+
+    type = type_matchups[attack.type][oppose.type_one] * type_matchups[attack.type][oppose.type_two];
+
+    let start = level_scale * attack.power * (a / d);
+    return start * stab * type;
+}
+class ColorBg {
+    constructor(color) {
+        this.x = 0;
+        this.y = 0;
+        this.color = color;
+        this.interactable = false;
+        this.visible = true;
+    }
+    update() {
+    }
+    draw() {
+        if (this.visible) {
+            ctx.beginPath();
+            ctx.fillStyle = this.color;
+            ctx.rect(0, 0, CANVAS_WIDTH, CANVAS_HEIGHT);
+            ctx.fill();
+        }
+
+    }
+}
 class BattleBgSprite {
     constructor() {
         this.x = 0;
@@ -270,14 +610,17 @@ class BattleBgSprite {
         this.current_sprite = new Image();
         this.current_sprite.src = '../img/gemu/1/bg/battle-bg.png';
         this.interactable = false;
+        this.visible = true;
     }
     update() {
     }
     draw() {
-        ctx.drawImage(this.current_sprite, this.x, this.y);
+        if (this.visible) {
+            ctx.drawImage(this.current_sprite, this.x, this.y);
+        }
+
     }
 }
-
 class SkySprite {
     constructor() {
         this.x = 0;
@@ -292,8 +635,36 @@ class SkySprite {
         ctx.drawImage(this.current_sprite, this.x, this.y);
     }
 }
-
-
+class attackAnimation {
+    constructor() {
+        this.sprites = hit_animation;
+        this.current_sprite_ptr = 0;
+        this.current_sprite = this.sprites[this.current_sprite_ptr];
+        this.x = 130
+        this.y = 100
+        this.anim_cont = -2;
+        this.interactable = false;
+        this.visible = true;
+        this.finished = false;
+    }
+    update() {
+        if (this.anim_cont % 6 == 0 && this.current_sprite_ptr < 4) {
+            this.current_sprite_ptr++;
+            this.current_sprite = this.sprites[this.current_sprite_ptr];
+            this.anim_cont = -2;
+        } else if (this.current_sprite_ptr >= 3 && this.anim_cont > 3) {
+            this.finished = true;
+            this.visible = false;
+            changeGameState(6);
+        }
+        this.anim_cont++;
+    }
+    draw() {
+        if (this.visible) {
+            ctx.drawImage(this.current_sprite, this.x, this.y);
+        }
+    }
+}
 class attBubbleSprite {
     constructor() {
         this.x = 380;
@@ -311,7 +682,7 @@ class attBubbleSprite {
         }
     }
     draw() {
-        ctx.drawImage(this.sprite, this.x, this.y);
+        ctx.drawImage(this.sprite, this.x, this.y, 70, 70);
     }
 }
 class GroundSprite {
@@ -328,7 +699,6 @@ class GroundSprite {
         ctx.drawImage(this.current_sprite, this.x, this.y);
     }
 }
-
 class Attack {
     constructor(name, type, power, is_phys) {
         this.name = name;
@@ -362,6 +732,8 @@ class MainCharacter {
         this.back_sprite.src = '../img/gemu/1/char/psyduck/btl-0.png';
         this.attack_sprite = new Image();
         this.attack_sprite.src = '../img/gemu/1/char/psyduck/btl-1.png';
+        this.attack_fail_sprite = new Image();
+        this.attack_fail_sprite.src = '../img/gemu/1/char/psyduck/btl-2.png';
         this.walk_cycle_ptr = 0;
         this.walk_cycle_ptr_dir = 1;
         //ataques
@@ -370,10 +742,12 @@ class MainCharacter {
         this.attacks_list.push(new Attack("Water Gun", WATER, 40, false));
         this.attacks_list.push(new Attack("Confusion", PSYCHIC, 50, false));
         this.attacks_list.push(new Attack("Mud Shot", GROUND, 55, false));
-        this.attack_stat = 114
-        this.sp_attack_stat = 128
+        this.attack_stat = 98;
+        this.sp_attack_stat = 121;
         this.visible = true;
         this.interactable = false;
+        this.type_one = WATER;
+        this.type_twp = WATER;
         //stage = 0 walk
         //state = 1 battle
         //stage = 2 attention
@@ -398,12 +772,32 @@ class MainCharacter {
             if (this.anim_cont > 1000) {
                 this.anim_cont = 0;
             }
-
         } else if (this.state == 2) {
             if (this.y > 30) {
                 this.y--;
             } else if (this.y == 30) {
-                this.visible = false;
+                let att_anim = new attackAnimation();
+                let black_bg = new ColorBg(BLACK);
+                layer = 1;
+                object_list[layer].push(black_bg);
+                object_list[layer].push(att_anim);
+            }
+        } else if (this.state == 3) {
+            if (this.y > 30) {
+                this.y--;
+            } else if (this.y == 30) {
+                //play fail sound
+                this.current_sprite = this.attack_fail_sprite;
+                this.anim_cont++;
+                if (this.anim_cont > 40) {
+                    changeGameState(4);
+                }
+
+            }
+        } else if (this.state == 4) {
+            this.anim_cont++;
+            if (this.anim_cont >= 30) {
+                handleEncounter();
             }
         }
     }
@@ -419,6 +813,7 @@ class MainCharacter {
     }
     changeState(state) {
         this.state = state;
+        this.anim_cont = 0;
         switch (state) {
             case 0:
                 this.current_sprite = this.walk_cycle_sprite[0]
@@ -431,61 +826,110 @@ class MainCharacter {
             case 2:
                 this.current_sprite = this.attack_sprite;
                 this.changeCoordinates(this.attack_anim_x, this.attack_anim_y);
+                break;
+            case 3:
+                this.current_sprite = this.attack_sprite;
+                this.changeCoordinates(this.attack_anim_x, this.attack_anim_y)
+                break;
+            case 4:
+                this.current_sprite = this.attention_sprite;
+                this.changeCoordinates(this.field_x, this.field_y);
             default:
                 break;
         }
     }
 }
 
-var then, now, elapsed, fpsInterval;
-let object_list = new Array();
-let main_char = new MainCharacter();
-const battle_bg = new BattleBgSprite();
-
-object_list.push(new SkySprite());
-object_list.push(new GroundSprite());
-object_list.push(main_char);
-
-
 function startAnimating(maxFPS) {
     fpsInterval = 1000 / maxFPS;
     then = Date.now();
     startTime = then;
+    console.log
     animate();
+}
+/*
+this function is called every frame and will test for an ecnounter,
+if an encounter is triggered handleEncounter() is called
+*/
+function encounterChance() {
+    if (game_state == 0) {
+
+        let chance = Math.floor(Math.random() * 101);
+        if (chance < 3) {
+            layer0.push(new attBubbleSprite());
+            main_char.changeState(4);
+        }
+    }
+}
+// this funciton uses the object list and calls update and draw for all of them
+function updateAndDrawAllobjects(object_listx) {
+    for (let i = 0; i < object_listx.length; i++) {
+        object_listx[i].update();
+    }
+    for (let i = 0; i < object_listx.length; i++) {
+        object_listx[i].draw();
+    }
+}
+// i created this in case i want to draw some info on screen
+function infoForMe() {
+    let texty = "stage " + game_stage;
+    ctx.fillText(texty, 10, 20);
+}
+/*
+this function will check if enough time has been elapsed since last
+frame to check if a new one should be generated 
+*/
+function canGetNewFrame() {
+    now = Date.now();
+    elapsed = now - then;
+    if (elapsed > fpsInterval) {
+        return true;
+    } else {
+        return false;
+    }
+}
+function updateTimeElapsedSinceLastFrame() {
+    then = now - (elapsed % fpsInterval);
 }
 
 function animate() {
     ctx.font = "12px Courier";
     requestAnimationFrame(animate);
-
-    now = Date.now();
-    elapsed = now - then;
-    if (elapsed > fpsInterval) {
-        if (game_state == 0) {
-            let chance = Math.floor(Math.random() * 101);
-            if (chance == 5) {
-                handleEncounter();
-            }
-        }
-
-        then = now - (elapsed % fpsInterval);
+    if (canGetNewFrame()) {
+        encounterChance();
+        updateTimeElapsedSinceLastFrame();
         ctx.clearRect(0, 0, CANVAS_WIDTH, CANVAS_HEIGHT);
-        for (let i = 0; i < object_list.length; i++) {
-            object_list[i].update();
-        }
-        for (let i = 0; i < object_list.length; i++) {
-            object_list[i].draw();
-        }
-        console.log(toString(game_stage));
-        let texty = "stage " + game_stage;
-        ctx.fillText(texty, 10, 20);
+        updateAndDrawAllobjects(object_list[0]);
+        updateAndDrawAllobjects(object_list[1]);
+        infoForMe();
     }
 }
-startAnimating(30);
+
+// start of runtime
+
+var then, now, elapsed, fpsInterval;
 var mousePos = {
     x: undefined,
     y: undefined
 }
+
+let object_list = new Array();
+// layer that should always be used
+let layer0 = new Array();
+// layer for when i dont want to erase scene
+let layer1 = new Array();
+
+object_list.push(layer0);
+object_list.push(layer1);
+let main_char = new MainCharacter();
+const battle_bg = new BattleBgSprite();
+
+layer0.push(new SkySprite());
+layer0.push(new GroundSprite());
+layer0.push(main_char);
+
+startAnimating(fps);
+
 canvas.addEventListener("mousemove", function (evt) {
     var rect = canvas.getBoundingClientRect();
     let x = (evt.clientX - rect.left) / (rect.right - rect.left) * canvas.width;
@@ -493,10 +937,11 @@ canvas.addEventListener("mousemove", function (evt) {
     mousePos.x = x;
     mousePos.y = y;
 })
+
 canvas.addEventListener("click", function (evt) {
-    for (let i = 0; i < object_list.length; i++) {
-        if (object_list[i].interactable) {
-            object_list[i].mouse_handler();
+    for (let i = 0; i < object_list[0].length; i++) {
+        if (object_list[0][i].interactable) {
+            object_list[0][i].mouse_handler();
         }
 
     }
