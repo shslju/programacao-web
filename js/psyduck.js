@@ -1,4 +1,7 @@
 const canvas = document.getElementById("game-canvas");
+const blur_button = document.getElementById("blur-button");
+const close_button = document.getElementById("close-button");
+const overlay = document.getElementById("overlay");
 const ctx = canvas.getContext('2d');
 const fps = 30;
 //colors
@@ -1187,7 +1190,6 @@ function animate() {
         encounterChance();
         updateTimeElapsedSinceLastFrame();
         ctx.clearRect(0, 0, CANVAS_WIDTH, CANVAS_HEIGHT);
-        console.log(object_list[0]);
         updateAndDrawAllobjects(object_list[0]);
         updateAndDrawAllobjects(object_list[1]);
         //infoForMe();
@@ -1236,3 +1238,15 @@ canvas.addEventListener("click", function (evt) {
         }
     }
 });
+blur_button.addEventListener("click", () => {
+    overlay.classList.add('animated');
+    overlay.style.pointerEvents = 'all';
+    document.body.classList.toggle('blurred');
+})
+close_button.addEventListener("click", () => {
+    console.log(1)
+    overlay.classList.remove('animated');
+    overlay.classList.toggle('reverseAnimated');
+    document.body.classList.toggle('blurred');
+    overlay.style.pointerEvents = 'none';
+})
