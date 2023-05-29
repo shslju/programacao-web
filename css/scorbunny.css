@@ -1,23 +1,120 @@
-body{
-    background-color: rgb(198, 104, 28);
+@keyframes opacityAnimation {
+    0%{
+        opacity: 0;
+    }
+    100%{
+        opacity: 1;
+    }
 }
-#game-body{
+@keyframes reverseOpacityAnimation {
+    0%{
+        opacity: 1;
+    }
+    100%{
+        opacity: 0;
+    }
+}
+body{
+    background-color: rgb(199, 96, 11);
+}
+
+#overlay {
+    position: fixed;
+    top: 0px;
+    left: 0px;
+    width: 100%;
+    height:100%;
+    background-color: rgba(0, 0, 0, 0.7);
+    opacity: 0%;
+    z-index: 999;
+    display: block;
+    transition: filter;
+    pointer-events: none;
+}
+#info-box {
+    position:relative;
+    left:25%;
+    top:10%;
+    width:950px;
+    height:780px;
+    background-image: url("../img/gemu/2/misc/tutorial.png");
+    background-size: contain;
+    background-color: none;
+}
+#close-button-box{
+    display: grid;
+    place-items: center;
+    position:relative;
+    border: 0px solid rgb(91, 62, 44);
+    top:3%;
+    left:95%;
+    width:65px;
+    height:65px;
+    border-radius: 20%;
+    background-color: transparent;
+}
+#close-button {
+    background-image: url("../img/close.png");
+    background-size: contain;
     background-color: inherit;
-    height:480px;
+    border: 0px;
+    position: relative;
+    height: 60px;
+    width:60px;
+    
+}
+#enveloper{
     position:fixed;
     top: 50%;
     left: 50%;
     transform: translate(-50%,-45%);
+}
+#game-body{
+    display: grid;
+    place-items: center;
+    background-color: inherit;
+    height:480px;
+    position:relative;
 }
 #game-canvas{
     border: 5px brown;
-    position:fixed;
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%,-45%);
     width: 640px;
     height: 480px;
     border: solid 5px;
     border-color: rgb(91, 62, 44);
     border-radius: 5%;
+}
+#button-box{
+    display: grid;
+    place-items: center;
+    position:relative;
+    border: 0px solid rgb(91, 62, 44);
+    width:65px;
+    height:65px;
+    border-radius: 20%;
+    left: 660px;
+    bottom:475px;
+    background-color: transparent;
+}
+#blur-button {
+    background-image: url("../img/info.png");
+    background-size: contain;
+    background-color: inherit;
+    border: 0px;
+    position: relative;
+    height: 60px;;
+    width:60px;
+    
+}
+.reverseAnimated {
+    animation-name: reverseOpacityAnimation;
+    animation-duration: 0.5s;
+    animation-timing-function: ease;
+    animation-fill-mode: forwards;
+}
+.animated {
+    animation-name: opacityAnimation;
+    animation-duration: 0.3s;
+    animation-timing-function: ease;
+    animation-fill-mode: forwards;
 }

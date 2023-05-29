@@ -167,10 +167,12 @@ let creature_list = [
     [
         { name: 'karp', type1: WATER, type2: WATER, df: 103, sp_df: 40 },
         { name: 'tyrogue', type1: FIGHTING, type2: FIGHTING, df: 67, sp_df: 67 },
-        { name: 'magby', type1: FIRE, type2: FIRE, df: 71, sp_df: 103 }
     ],
     [
         { name: 'floette', type1: FAIRY, type2: FAIRY, df: 89, sp_df: 189 },
+    ],
+    [
+        { name: 'magby', type1: FIRE, type2: FIRE, df: 71, sp_df: 103 }
     ]]
 /*full creature list should only be added when all assets are drawn
 let creature_list = [
@@ -574,9 +576,16 @@ function changeGameState(state) {
         case 7:
             setUpAttackAnimScene();
             break;
+        case 8:
+            setUpEndGame();
+            break;
         default:
             break;
     }
+}
+
+function setUpEndGame() {
+    object_list[0].push(new GoodEndSprite());
 }
 function handleEncounter() {
     changeGameState(1);
@@ -667,8 +676,11 @@ class ContinueButton {
     exec_action() {
         if (this.is_victory_screen) {
             game_stage++;
-            if (game_stage == 4) {
-                //end-game;
+            console.log(game_stage)
+            if (game_stage + 1 == 4) {
+                changeGameState(8);
+                return 0;
+
             }
         } else {
             game_stage = 0;
@@ -811,6 +823,24 @@ class BattleBgSprite {
         this.y = 0;
         this.current_sprite = new Image();
         this.current_sprite.src = '../img/gemu/1/bg/battle-bg.png';
+        this.interactable = false;
+        this.visible = true;
+    }
+    update() {
+    }
+    draw() {
+        if (this.visible) {
+            ctx.drawImage(this.current_sprite, this.x, this.y);
+        }
+
+    }
+}
+class GoodEndSprite {
+    constructor() {
+        this.x = 0;
+        this.y = 0;
+        this.current_sprite = new Image();
+        this.current_sprite.src = '../img/gemu/1/misc/good_end.png';
         this.interactable = false;
         this.visible = true;
     }
@@ -1094,9 +1124,11 @@ class MainCharacter {
             case 8:
                 this.current_sprite = this.sleep_cycle[0];
                 this.changeCoordinates(0, 0);
+                break;
             case 9:
                 this.current_sprite = this.wake_up_sprite;
                 this.changeCoordinates(0, 0);
+                break;
             default:
                 break;
         }
@@ -1152,7 +1184,7 @@ function encounterChance() {
         }
     }
 }
-// this funciton uses the object list and calls update and draw for all of them
+// this function uses the object list and calls update and draw for all of them
 function updateAndDrawAllobjects(object_listx) {
     for (let i = 0; i < object_listx.length; i++) {
         object_listx[i].update();

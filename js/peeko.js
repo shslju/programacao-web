@@ -8,7 +8,7 @@ const BLACK = "rgb(0,0,0)"
 
 const blip_audio = new Audio("./sfx/sfx-blipmale.wav");
 const confirm_audio = new Audio("./sfx/sfx-confirm.wav");
-const dialogue_start_audio = new Audio("./sfx/sfx-dialogue-start.wav")
+const dialogue_start_audio = new Audio("./sfx/sfx-dialogue-start.wav");
 //add a button audio here!!
 const CANVAS_WIDTH = (canvas.width = 640);
 const CANVAS_HEIGHT = (canvas.height = 480);
@@ -37,32 +37,38 @@ let dialogue = {
 //1: redireção
 let dialogue_list = [{
     lines: [
-        ["hmmmm......!", "minha memória está ruim..."],
-        ["eu já te vi por ", "aqui?"],
+        ["Olá! ", "seja bem-vindo(a) a "],
+        ["ZERIOUM...! "],
     ],
     decision: [
-        ["Sim!", [0, 1]],
+        ["Valeu", [0, 1]],
         ["Não.....", [0, 2]]
     ]
 },
 {
     lines: [
-        ["Então por favor ", "insira suas", "credenciais!"],
+        ["Por favor ", "selecione um ", "jogo! "],
     ],
     decision: [
         ["PSYDUCK", [1, "psyduck.html"]],
         ["SCORBUNNY", [1, "scorbunny.html"]],
-        ["????", [1, "#"]]
+        ["????", [0, 3]]
     ]
 },
 {
     lines: [
-        ["Então por favor ", "se registre!"],
+        [" Então por favor ", " vá simbora "],
     ],
     decision: [
-        ["Ok!", [1, "register.html"]]
+        ["Ok!", [1, "http://google.com"]]
+    ]
+},
+{
+    lines: [
+        ["Novos jogos estão ", "sendo criados, ", "por favor tenha ", "paciência "],
     ]
 }
+
 
 ]
 
